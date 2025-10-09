@@ -1,7 +1,7 @@
 # Личный проект «Шесть городов»
 
-* Студент: [Максим Третьяков](https://up.htmlacademy.ru/univer-nodejs-api/5/user/2673493).
-* Наставник: `Неизвестно`.
+- Студент: [Максим Третьяков](https://up.htmlacademy.ru/univer-nodejs-api/5/user/2673493).
+- Наставник: [Олег Глущенко](https://htmlacademy.ru/profile/id305355)
 
 ---
 
