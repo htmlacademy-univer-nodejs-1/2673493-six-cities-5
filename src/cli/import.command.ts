@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { ICommandHandler } from './command-handler.interface';
+import { createReadStream } from 'node:fs';
+import { ICommandHandler } from './command-handler.interface.js';
 import type { User, Offer, City, HousingType, Amenity, UserType} from '../shared/types';
 import chalk from 'chalk';
-import { fileURLToPath, resolve } from 'node:url';
+import { createInterface } from 'node:readline';
 
 export class ImportCommand implements ICommandHandler {
   public readonly name = '--import';
@@ -84,25 +84,34 @@ export class ImportCommand implements ICommandHandler {
     return offer;
   }
 
-  private getOffers() {
-    const currentFilePath = fileURLToPath(import.meta.url);
-    const offersPath = resolve(currentFilePath, '../../mocks/offers.tsv');
-    try {
-      return readFileSync(offersPath, 'utf-8')
-        .split('\n')
-        .filter((line) => line.trim().length !== 0)
-        .map((line) => line.split('\t'))
-        .map((line) => this.getOffer(line));
-    } catch (error) {
-      console.log(chalk.red('Не удалось прочитать файл с данными. Убедитесь, что файл ./mocks/offers.tsv существует'));
-      return [];
-    }
-  }
+  public async execute(...params: string[]): Promise<void> {
+    const [filepath] = params;
 
-  execute(): void {
-    const offers = this.getOffers();
-    for (const offer of offers) {
-      this.printOffer(offer);
+    if (!filepath) {
+      console.log(chalk.red('Не указан путь к файлу. Используйте: --import <filepath>'));
+      return;
     }
+
+    const readStream = createReadStream(filepath.trim(), { encoding: 'utf-8' });
+    const rl = createInterface({
+      input: readStream,
+      crlfDelay: Infinity,
+    });
+
+    rl.on('line', (line) => {
+      if (line.trim() === '') {
+        return;
+      }
+      const offer = this.getOffer(line.split('\t'));
+      this.printOffer(offer);
+    });
+
+    readStream.on('error', (error) => {
+      console.log(chalk.red(`Не удалось прочитать файл с данными. Ошибка: ${error.message}`));
+    });
+
+    rl.on('close', () => {
+      console.log(chalk.green('Импорт данных успешно завершен.'));
+    });
   }
 }

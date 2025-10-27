@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { ICommandHandler } from './command-handler.interface';
+import { ICommandHandler } from './command-handler.interface.js';
 import chalk from 'chalk';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +14,7 @@ export class VersionCommand implements ICommandHandler {
     return packageJson.version;
   }
 
-  public execute(): void {
+  public async execute(): Promise<void> {
     const version = this.getVersion();
     console.log(chalk.blue.bold(version));
   }

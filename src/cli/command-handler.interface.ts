@@ -1,4 +1,4 @@
 export interface ICommandHandler {
   readonly name: string;
-  execute(...params: string[]): void;
+  execute(...params: string[]): Promise<void>;
 }

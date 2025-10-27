@@ -1,0 +1,144 @@
+{
+  "offers": [
+    {
+      "name": "Beautiful & luxurious studio at great location",
+      "description": "A quiet cozy and picturesque that hides behind a a river by the unique lightness of Amsterdam. The building is green and from 18th century.",
+      "publicationDate": "2024-10-20T12:00:00.000Z",
+      "city": "Amsterdam",
+      "previewSrc": "img/apartment-01.jpg",
+      "images": ["img/room.jpg", "img/apartment-01.jpg", "img/apartment-02.jpg", "img/apartment-03.jpg", "img/studio-01.jpg", "img/apartment-01.jpg"],
+      "isPremium": true,
+      "isFavorite": false,
+      "rating": 4.8,
+      "type": "apartment",
+      "bedroomsCount": 3,
+      "guestCount": 4,
+      "price": 120,
+      "amenities": ["Breakfast", "Air conditioning", "Washer", "Towels", "Fridge"],
+      "host": {
+        "name": "Angelina",
+        "email": "angelina@test.com",
+        "avatarSrc": "img/avatar-angelina.jpg",
+        "password": "password123",
+        "type": "pro"
+      },
+      "commentsCount": 5,
+      "coordinates": {
+        "latitude": 52.3909553943508,
+        "longitude": 4.85309666406198
+      }
+    },
+    {
+      "name": "Canal View Prinsengracht",
+      "description": "A new spacious villa, one floor. All commodities, jacuzzi and beautiful scenery. Ideal for families or friends.",
+      "publicationDate": "2024-10-21T10:30:00.000Z",
+      "city": "Amsterdam",
+      "previewSrc": "img/room.jpg",
+      "images": ["img/room.jpg", "img/apartment-01.jpg", "img/apartment-02.jpg", "img/apartment-03.jpg", "img/studio-01.jpg", "img/apartment-01.jpg"],
+      "isPremium": false,
+      "isFavorite": true,
+      "rating": 4.5,
+      "type": "room",
+      "bedroomsCount": 1,
+      "guestCount": 2,
+      "price": 80,
+      "amenities": ["Towels", "Fridge"],
+      "host": {
+        "name": "John Doe",
+        "email": "john@test.com",
+        "avatarSrc": "img/avatar-max.jpg",
+        "password": "password456",
+        "type": "обычный"
+      },
+      "commentsCount": 10,
+      "coordinates": {
+        "latitude": 52.3609553943508,
+        "longitude": 4.85309666406198
+      }
+    },
+    {
+      "name": "Nice, cozy, warm big bed apartment",
+      "description": "This is a place for dreamers to reset, reflect, and create. Designed with a 'slow' pace in mind, our hope is that you enjoy every part of your stay.",
+      "publicationDate": "2024-10-22T15:00:00.000Z",
+      "city": "Paris",
+      "previewSrc": "img/apartment-02.jpg",
+      "images": ["img/room.jpg", "img/apartment-01.jpg", "img/apartment-02.jpg", "img/apartment-03.jpg", "img/studio-01.jpg", "img/apartment-01.jpg"],
+      "isPremium": true,
+      "isFavorite": true,
+      "rating": 5,
+      "type": "apartment",
+      "bedroomsCount": 2,
+      "guestCount": 3,
+      "price": 250,
+      "amenities": ["Breakfast", "Laptop friendly workspace", "Washer"],
+      "host": {
+        "name": "Angelina",
+        "email": "angelina@test.com",
+        "avatarSrc": "img/avatar-angelina.jpg",
+        "password": "password123",
+        "type": "pro"
+      },
+      "commentsCount": 2,
+      "coordinates": {
+        "latitude": 48.85661,
+        "longitude": 2.351499
+      }
+    },
+    {
+      "name": "Loft Studio in the Central Area",
+      "description": "The building is green and from 18th century. A quiet cozy and picturesque that hides behind a a river by the unique lightness of Amsterdam.",
+      "publicationDate": "2024-10-19T09:45:00.000Z",
+      "city": "Cologne",
+      "previewSrc": "img/apartment-03.jpg",
+      "images": ["img/room.jpg", "img/apartment-01.jpg", "img/apartment-02.jpg", "img/apartment-03.jpg", "img/studio-01.jpg", "img/apartment-01.jpg"],
+      "isPremium": false,
+      "isFavorite": false,
+      "rating": 3.9,
+      "type": "hotel",
+      "bedroomsCount": 1,
+      "guestCount": 2,
+      "price": 150,
+      "amenities": ["Air conditioning", "Fridge"],
+      "host": {
+        "name": "Max Power",
+        "email": "max@test.com",
+        "avatarSrc": "img/avatar-max.jpg",
+        "password": "password789",
+        "type": "обычный"
+      },
+      "commentsCount": 8,
+      "coordinates": {
+        "latitude": 50.938361,
+        "longitude": 6.959974
+      }
+    },
+    {
+      "name": "Wood and stone place",
+      "description": "Discover the beauty of the city from this cozy apartment. A perfect place for a romantic getaway or a business trip.",
+      "publicationDate": "2024-10-23T18:20:00.000Z",
+      "city": "Brussels",
+      "previewSrc": "img/room.jpg",
+      "images": ["img/room.jpg", "img/apartment-01.jpg", "img/apartment-02.jpg", "img/apartment-03.jpg", "img/studio-01.jpg", "img/apartment-01.jpg"],
+      "isPremium": false,
+      "isFavorite": true,
+      "rating": 4.2,
+      "type": "house",
+      "bedroomsCount": 5,
+      "guestCount": 8,
+      "price": 400,
+      "amenities": ["Breakfast", "Air conditioning", "Laptop friendly workspace", "Baby seat", "Washer", "Towels", "Fridge"],
+      "host": {
+        "name": "Angelina",
+        "email": "angelina@test.com",
+        "avatarSrc": "img/avatar-angelina.jpg",
+        "password": "password123",
+        "type": "pro"
+      },
+      "commentsCount": 15,
+      "coordinates": {
+        "latitude": 50.846557,
+        "longitude": 4.351697
+      }
+    }
+  ]
+}
