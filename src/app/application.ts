@@ -45,6 +45,11 @@ export class Application {
   public async init() {
     this.logger.info('Application initialized.');
     this.logger.info(`Get value from config PORT: ${this.config.get('PORT')}`);
-    await this.processCommand(process.argv);
+
+    try {
+      await this.processCommand(process.argv);
+    } catch (error) {
+      this.logger.error('An error occurred during command processing', error as Error);
+    }
   }
 }

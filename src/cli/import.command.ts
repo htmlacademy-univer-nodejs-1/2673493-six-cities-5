@@ -6,34 +6,44 @@ import { createInterface } from 'node:readline';
 import { ILogger } from '../shared/libs/logger/index.js';
 import { injectable, inject } from 'inversify';
 import { Component } from '../shared/types/index.js';
+import { IOfferService } from '../shared/modules/offer/index.js';
+import { IUserService } from '../shared/modules/user/index.js';
+import { IConfig, RestSchema } from '../shared/libs/config/index.js';
+import { IDatabaseClient } from '../shared/libs/database-client/index.js';
+import { getMongoURI } from '../shared/libs/utils.js';
 
 @injectable()
 export class ImportCommand implements ICommandHandler {
   public readonly name = '--import';
+  private salt: string;
 
-  constructor(@inject(Component.Logger) private readonly logger: ILogger) {}
-
-  private printOffer(offer: Offer) {
-    this.logger.info(`
-      ${chalk.cyan.bold('Имя:')} ${offer.name}
-      ${chalk.cyan.bold('Описание:')} ${offer.description}
-      ${chalk.cyan.bold('Дата публикации:')} ${offer.publicationDate}
-      ${chalk.cyan.bold('Город:')} ${offer.city}
-      ${offer.isPremium ? chalk.green('Премиум') : chalk.red('Не премиум')}
-      ${offer.isFavorite ? chalk.green('Избранное') : chalk.red('Не в избранном')}
-      ${chalk.cyan.bold('Рейтинг:')} ${offer.rating}
-      ${chalk.cyan.bold('Тип:')} ${offer.type}
-      ${chalk.cyan.bold('Количество комнат:')} ${offer.bedroomsCount}
-      ${chalk.cyan.bold('Количество гостей:')} ${offer.guestCount}
-      ${chalk.cyan.bold('Стоимость аренды:')} ${offer.price}
-      ${chalk.cyan.bold('Удобства:')} ${offer.amenities.join(', ')}
-      ${chalk.cyan.bold('Автор предложения:')} ${offer.host.name}
-      ${chalk.cyan.bold('Количество комментариев:')} ${offer.commentsCount}
-      ${chalk.cyan.bold('Координаты предложения:')} ${offer.coordinates.latitude} ${offer.coordinates.longitude}
-    `);
+  constructor(
+    @inject(Component.Logger) private readonly logger: ILogger,
+    @inject(Component.OfferService) private readonly offerService: IOfferService,
+    @inject(Component.UserService) private readonly userService: IUserService,
+    @inject(Component.Config) configService: IConfig<RestSchema>,
+    @inject(Component.DatabaseClient) private readonly databaseClient: IDatabaseClient,
+  ) {
+    this.salt = configService.get('SALT');
   }
 
-  private getOffer(lineData: string[]) {
+  private onComplete(count: number) {
+    this.logger.info(`${count} rows imported.`);
+    this.logger.info(chalk.green('Импорт данных успешно завершен.'));
+  }
+
+  private async saveOffer(offerData: Offer) {
+    const user = await this.userService.findOrCreate({
+      ...offerData.host,
+    }, this.salt);
+
+    await this.offerService.create({
+      ...offerData,
+      host: user.id,
+    });
+  }
+
+  private getOffer(lineData: string[]): Offer {
     const [
       name,
       description,
@@ -64,7 +74,7 @@ export class ImportCommand implements ICommandHandler {
       type: hostType as UserType,
     };
 
-    const offer: Offer = {
+    return {
       name,
       description,
       publicationDate: new Date(publicationDate),
@@ -86,38 +96,48 @@ export class ImportCommand implements ICommandHandler {
         longitude: parseFloat(longitude),
       },
     };
-
-    return offer;
   }
 
   public async execute(...params: string[]): Promise<void> {
-    const [filepath] = params;
+    const [filepath, user, password, host, port, dbname] = params;
 
-    if (!filepath) {
-      this.logger.warn('Не указан путь к файлу. Используйте: --import <filepath>');
+    if (!filepath || !user || !password || !host || !port || !dbname) {
+      this.logger.warn('Incorrect parameters. Usage: --import <filepath> <user> <password> <host> <port> <dbname>');
       return;
     }
 
-    const readStream = createReadStream(filepath.trim(), { encoding: 'utf-8' });
-    const rl = createInterface({
-      input: readStream,
-      crlfDelay: Infinity,
-    });
+    const mongoUri = getMongoURI(user, password, host, Number.parseInt(port, 10), dbname);
 
-    rl.on('line', (line) => {
-      if (line.trim() === '') {
-        return;
+    try {
+      await this.databaseClient.connect(mongoUri);
+
+      const readStream = createReadStream(filepath.trim(), { encoding: 'utf-8' });
+      const rl = createInterface({
+        input: readStream,
+        crlfDelay: Infinity,
+      });
+
+      let importedRowCount = 0;
+
+      for await (const line of rl) {
+        if (line.trim() === '') {
+          continue;
+        }
+        try {
+          const offer = this.getOffer(line.split('\t'));
+          await this.saveOffer(offer);
+          importedRowCount++;
+        } catch (e) {
+          this.logger.error(`Error importing line: ${line}`, e as Error);
+          this.logger.error((e as Error).message, e as Error);
+        }
       }
-      const offer = this.getOffer(line.split('\t'));
-      this.printOffer(offer);
-    });
 
-    readStream.on('error', (error) => {
-      this.logger.error(`Не удалось прочитать файл с данными. Ошибка: ${error.message}`, error);
-    });
-
-    rl.on('close', () => {
-      this.logger.info(chalk.green('Импорт данных успешно завершен.'));
-    });
+      this.onComplete(importedRowCount);
+    } catch (error) {
+      this.logger.error('Failed to import data.', error as Error);
+    } finally {
+      await this.databaseClient.disconnect();
+    }
   }
 }

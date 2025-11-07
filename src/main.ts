@@ -10,6 +10,10 @@ import { ILogger, PinoLogger } from './shared/libs/logger/index.js';
 import { IConfig, RestConfig, RestSchema } from './shared/libs/config/index.js';
 import { Component } from './shared/types/index.js';
 import { execSync } from 'node:child_process';
+import { IDatabaseClient, MongoDatabaseClient } from './shared/libs/database-client/index.js';
+import { DefaultUserService, UserEntity, UserModel, IUserService } from './shared/modules/user/index.js';
+import { DefaultOfferService, OfferEntity, OfferModel, IOfferService } from './shared/modules/offer/index.js';
+import { types } from '@typegoose/typegoose';
 
 async function bootstrap() {
   if (process.platform === 'win32') {
@@ -23,6 +27,12 @@ async function bootstrap() {
   container.bind<ICommandHandler>(Component.VersionCommand).to(VersionCommand).inSingletonScope();
   container.bind<ICommandHandler>(Component.ImportCommand).to(ImportCommand).inSingletonScope();
   container.bind<ICommandHandler>(Component.GenerateCommand).to(GenerateCommand).inSingletonScope();
+
+  container.bind<IDatabaseClient>(Component.DatabaseClient).to(MongoDatabaseClient).inSingletonScope();
+  container.bind<IUserService>(Component.UserService).to(DefaultUserService).inSingletonScope();
+  container.bind<types.ModelType<UserEntity>>(Component.UserModel).toConstantValue(UserModel as any);
+  container.bind<IOfferService>(Component.OfferService).to(DefaultOfferService).inSingletonScope();
+  container.bind<types.ModelType<OfferEntity>>(Component.OfferModel).toConstantValue(OfferModel as any);
 
   const application = container.get<Application>(Component.Application);
   await application.init();

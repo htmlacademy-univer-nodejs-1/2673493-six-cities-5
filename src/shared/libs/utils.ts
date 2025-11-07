@@ -1,3 +1,5 @@
+import { createHmac } from 'node:crypto';
+
 export function getRandomNumber(min: number, max: number, precision = 0): number {
   const randomValue = Math.random() * (max - min) + min;
   return parseFloat(randomValue.toFixed(precision));
@@ -15,3 +17,13 @@ export const CITIES_COORDINATES = {
   'Hamburg': { latitude: 53.550341, longitude: 10.000654 },
   'Dusseldorf': { latitude: 51.225402, longitude: 6.776314 },
 };
+
+
+export function createSHA256(line: string, salt: string): string {
+  const shaHasher = createHmac('sha256', salt);
+  return shaHasher.update(line).digest('hex');
+}
+
+export function getMongoURI(user: string, password: string, host: string, port: number, dbname: string): string {
+  return `mongodb://${user}:${password}@${host}:${port}/${dbname}?authSource=admin`;
+}
