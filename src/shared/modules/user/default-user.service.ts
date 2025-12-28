@@ -73,4 +73,16 @@ export class DefaultUserService implements IUserService {
 
     return (user?.favorites as unknown as DocumentType<OfferEntity>[]) ?? [];
   }
+
+  public async setAvatar(userId: string, avatarPath: string): Promise<DocumentType<UserEntity> | null> {
+    const result = this.userModel
+      .findByIdAndUpdate(userId, { avatarSrc: avatarPath }, { new: true })
+      .exec();
+    return result as unknown as DocumentType<UserEntity> | null;
+  }
+
+  public async exists(userId: string): Promise<boolean> {
+    const result = await this.userModel.exists({ _id: userId });
+    return result !== null;
+  }
 }

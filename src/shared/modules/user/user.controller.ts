@@ -12,7 +12,7 @@ import { LoginUserDto } from './dto/login-user.dto.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { plainToInstance } from 'class-transformer';
 import { HttpError } from '../../libs/rest/errors/http-error.js';
-import { ValidateDtoMiddleware } from '../../libs/rest/middleware/index.js';
+import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, UploadFileMiddleware, DocumentExistsMiddleware } from '../../libs/rest/middleware/index.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -30,13 +30,27 @@ export class UserController extends BaseController {
       handler: this.create,
       middlewares: [new ValidateDtoMiddleware(CreateUserDto)]
     });
+
     this.addRoute({
       path: '/login',
       method: HttpMethod.Post,
       handler: this.login,
       middlewares: [new ValidateDtoMiddleware(LoginUserDto)]
     });
+
     this.addRoute({ path: '/me', method: HttpMethod.Get, handler: this.checkStatus });
+
+    const documentExistsMiddleware = new DocumentExistsMiddleware(this.userService, 'User', 'userId');
+    this.addRoute({
+      path: '/:userId/avatar',
+      method: HttpMethod.Post,
+      handler: this.uploadAvatar,
+      middlewares: [
+        new ValidateObjectIdMiddleware('userId'),
+        documentExistsMiddleware,
+        new UploadFileMiddleware(this.config, 'avatar'),
+      ]
+    });
   }
 
   public async create(
@@ -88,5 +102,18 @@ export class UserController extends BaseController {
     }
 
     this.ok(res, plainToInstance(UserRdo, user, { excludeExtraneousValues: true }));
+  }
+
+  public async uploadAvatar(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+
+    if (!req.file) {
+      throw new HttpError(StatusCodes.BAD_REQUEST, 'No file uploaded');
+    }
+
+    const filename = req.file.filename;
+    const avatarPath = `/static/${filename}`;
+    const updatedUser = await this.userService.setAvatar(userId, avatarPath);
+    this.created(res, plainToInstance(UserRdo, updatedUser, { excludeExtraneousValues: true }));
   }
 }

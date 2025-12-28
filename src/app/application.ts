@@ -8,6 +8,7 @@ import { IController } from '../shared/libs/rest/controller/index.js';
 import { ICommandHandler } from '../cli/command-handler.interface.js';
 import { IDatabaseClient } from '../shared/libs/database-client/index.js';
 import { getMongoURI } from '../shared/libs/utils.js';
+import { resolve } from 'node:path';
 
 @injectable()
 export class Application {
@@ -52,6 +53,11 @@ export class Application {
 
   private async _initMiddleware() {
     this.server.use(express.json());
+    const uploadDirectory = this.config.get('UPLOAD_DIRECTORY');
+    this.server.use(
+      '/static',
+      express.static(resolve(process.cwd(), uploadDirectory))
+    );
     this.logger.info('Global middleware initialized.');
   }
 

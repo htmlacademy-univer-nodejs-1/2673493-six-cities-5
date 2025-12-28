@@ -1,4 +1,4 @@
-import { ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/rest/middleware/index.js';
+import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, DocumentExistsMiddleware } from '../../libs/rest/middleware/index.js';
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { BaseController } from '../../libs/rest/controller/base-controller.abstract.js';
@@ -28,6 +28,7 @@ export class OfferController extends BaseController {
 
     this.logger.info('Register routes for OfferController...');
     const validateObjectIdMiddleware = new ValidateObjectIdMiddleware('offerId');
+    const documentExistsMiddleware = new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId');
 
     this.addRoute({ path: '/', method: HttpMethod.Get, handler: this.index });
     this.addRoute({
@@ -41,19 +42,19 @@ export class OfferController extends BaseController {
       path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.show,
-      middlewares: [validateObjectIdMiddleware]
+      middlewares: [validateObjectIdMiddleware, documentExistsMiddleware]
     });
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Patch,
       handler: this.update,
-      middlewares: [validateObjectIdMiddleware, new ValidateDtoMiddleware(UpdateOfferDto)]
+      middlewares: [validateObjectIdMiddleware, new ValidateDtoMiddleware(UpdateOfferDto), documentExistsMiddleware]
     });
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Delete,
       handler: this.delete,
-      middlewares: [validateObjectIdMiddleware]
+      middlewares: [validateObjectIdMiddleware, documentExistsMiddleware]
     });
   }
 
@@ -78,15 +79,6 @@ export class OfferController extends BaseController {
   public async show({ params }: Request, res: Response): Promise<void> {
     const { offerId } = params as ParamOfferId;
     const offer = await this.offerService.findById(offerId);
-
-    if (!offer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `Offer with id ${offerId} not found.`,
-        'OfferController'
-      );
-    }
-
     this.ok(res, plainToInstance(OfferRdo, offer, { excludeExtraneousValues: true }));
   }
 
@@ -96,29 +88,12 @@ export class OfferController extends BaseController {
   ): Promise<void> {
     const { offerId } = params as ParamOfferId;
     const updatedOffer = await this.offerService.updateById(offerId, body);
-
-    if (!updatedOffer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `Offer with id ${offerId} not found.`,
-        'OfferController'
-      );
-    }
-
     this.ok(res, plainToInstance(OfferRdo, updatedOffer, { excludeExtraneousValues: true }));
   }
 
   public async delete({ params }: Request, res: Response): Promise<void> {
     const { offerId } = params as ParamOfferId;
-    const offer = await this.offerService.deleteById(offerId);
-
-    if (!offer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `Offer with id ${offerId} not found.`,
-        'OfferController'
-      );
-    }
+    await this.offerService.deleteById(offerId);
     this.noContent(res);
   }
 
