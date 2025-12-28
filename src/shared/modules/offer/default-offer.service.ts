@@ -17,9 +17,10 @@ export class DefaultOfferService implements IOfferService {
     @inject(Component.Logger) private readonly logger: ILogger
   ) {}
 
-  public async create(dto: CreateOfferDto): Promise<DocumentType<OfferEntity>> {
+  public async create(dto: CreateOfferDto, userId: string): Promise<DocumentType<OfferEntity>> {
     const result = await this.offerModel.create({
       ...dto,
+      host: userId,
       publicationDate: new Date(),
       rating: 1,
     });

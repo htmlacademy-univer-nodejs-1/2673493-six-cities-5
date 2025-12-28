@@ -17,10 +17,10 @@ export class DefaultCommentService implements ICommentService {
     @inject(Component.Logger) private readonly logger: ILogger,
   ) {}
 
-  public async create(dto: CreateCommentDto): Promise<DocumentType<CommentEntity>> {
+  public async create(dto: CreateCommentDto, userId: string): Promise<DocumentType<CommentEntity>> {
     const comment = await this.commentModel.create({
       ...dto,
-      user: dto.userId,
+      user: userId,
       publicationDate: new Date(),
     });
 

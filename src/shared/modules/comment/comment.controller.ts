@@ -1,4 +1,4 @@
-import { DocumentExistsMiddleware, ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/rest/middleware/index.js';
+import { DocumentExistsMiddleware, ValidateDtoMiddleware, ValidateObjectIdMiddleware, IMiddleware } from '../../libs/rest/middleware/index.js';
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { BaseController } from '../../libs/rest/controller/base-controller.abstract.js';
@@ -10,6 +10,8 @@ import { HttpMethod } from '../../libs/rest/types/http-method.enum.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { plainToInstance } from 'class-transformer';
 import { CommentRdo } from './rdo/comment.rdo.js';
+import { HttpError } from '../../libs/rest/errors/http-error.js';
+import { StatusCodes } from 'http-status-codes';
 
 type ParamOfferId = {
   offerId: string;
@@ -21,6 +23,7 @@ export class CommentController extends BaseController {
     @inject(Component.Logger) protected readonly logger: ILogger,
     @inject(Component.CommentService) private readonly commentService: ICommentService,
     @inject(Component.OfferService) private readonly offerService: IOfferService,
+    @inject(Component.PrivateRouteMiddleware) private readonly privateRouteMiddleware: IMiddleware,
   ) {
     super(logger);
 
@@ -38,7 +41,12 @@ export class CommentController extends BaseController {
       path: '/:offerId/comments',
       method: HttpMethod.Post,
       handler: this.create,
-      middlewares: [validateObjectIdMiddleware, new ValidateDtoMiddleware(CreateCommentDto), documentExistsMiddleware]
+      middlewares: [
+        this.privateRouteMiddleware,
+        validateObjectIdMiddleware,
+        new ValidateDtoMiddleware(CreateCommentDto),
+        documentExistsMiddleware
+      ]
     });
   }
 
@@ -53,11 +61,14 @@ export class CommentController extends BaseController {
     req: Request<unknown, unknown, CreateCommentDto>,
     res: Response
   ): Promise<void> {
-    const { body } = req;
+    const { body, user } = req;
     const { offerId } = req.params as ParamOfferId;
-    const userId = '662fca6a15456f59e9a4f4d2';
 
-    const result = await this.commentService.create({ ...body, offerId, userId });
+    if (!user) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
+    }
+
+    const result = await this.commentService.create({ ...body, offerId }, user.id);
     this.created(res, plainToInstance(CommentRdo, result, { excludeExtraneousValues: true }));
   }
 }

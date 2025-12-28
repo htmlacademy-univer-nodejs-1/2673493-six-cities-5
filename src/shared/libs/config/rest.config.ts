@@ -22,8 +22,8 @@ export class RestConfig implements IConfig<RestSchema> {
     this.config = configRestSchema.getProperties();
     this.logger.info('.env file found and successfully parsed!');
 
-    if (this.config.SALT === null || this.config.DB_HOST === null || this.config.DB_USER === null || this.config.DB_PASSWORD === null || this.config.DB_NAME === null) {
-      this.logger.error('Not all required environment variables are set (SALT, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME). Application will be terminated.', new Error('Environment configuration error'));
+    if (this.config.SALT === null || this.config.DB_HOST === null || this.config.DB_USER === null || this.config.DB_PASSWORD === null || this.config.DB_NAME === null || this.config.JWT_SECRET === null) {
+      this.logger.error('Not all required environment variables are set (SALT, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, JWT_SECRET). Application will be terminated.', new Error('Environment configuration error'));
       throw new Error('Not all required environment variables are set. Check .env file.');
     }
   }

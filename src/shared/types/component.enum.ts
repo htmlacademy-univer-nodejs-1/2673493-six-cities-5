@@ -18,4 +18,7 @@ export const Component = {
   OfferController: Symbol.for('OfferController'),
   FavoriteController: Symbol.for('FavoriteController'),
   CommentController: Symbol.for('CommentController'),
+  TokenService: Symbol.for('TokenService'),
+  AuthenticateMiddleware: Symbol.for('AuthenticateMiddleware'),
+  PrivateRouteMiddleware: Symbol.for('PrivateRouteMiddleware'),
 } as const;

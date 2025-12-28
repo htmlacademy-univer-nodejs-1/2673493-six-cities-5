@@ -1,4 +1,4 @@
-import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, DocumentExistsMiddleware } from '../../libs/rest/middleware/index.js';
+import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, DocumentExistsMiddleware, IMiddleware } from '../../libs/rest/middleware/index.js';
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { BaseController } from '../../libs/rest/controller/base-controller.abstract.js';
@@ -13,6 +13,9 @@ import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
 import { HttpError } from '../../libs/rest/errors/http-error.js';
 import { StatusCodes } from 'http-status-codes';
+import { IUserService, UserEntity} from '../user/index.js';
+import { DocumentType } from '@typegoose/typegoose';
+import { OfferEntity } from './offer.entity.js';
 
 type ParamOfferId = {
   offerId: string;
@@ -21,8 +24,10 @@ type ParamOfferId = {
 @injectable()
 export class OfferController extends BaseController {
   constructor(
-    @inject(Component.Logger) protected readonly logger: ILogger,
-    @inject(Component.OfferService) private readonly offerService: IOfferService,
+  @inject(Component.Logger) protected readonly logger: ILogger,
+  @inject(Component.OfferService) private readonly offerService: IOfferService,
+  @inject(Component.UserService) private readonly userService: IUserService,
+  @inject(Component.PrivateRouteMiddleware) private readonly privateRouteMiddleware: IMiddleware,
   ) {
     super(logger);
 
@@ -35,7 +40,10 @@ export class OfferController extends BaseController {
       path: '/',
       method: HttpMethod.Post,
       handler: this.create,
-      middlewares: [new ValidateDtoMiddleware(CreateOfferDto)]
+      middlewares: [
+        this.privateRouteMiddleware,
+        new ValidateDtoMiddleware(CreateOfferDto)
+      ]
     });
     this.addRoute({ path: '/premium', method: HttpMethod.Get, handler: this.getPremium });
     this.addRoute({
@@ -48,51 +56,113 @@ export class OfferController extends BaseController {
       path: '/:offerId',
       method: HttpMethod.Patch,
       handler: this.update,
-      middlewares: [validateObjectIdMiddleware, new ValidateDtoMiddleware(UpdateOfferDto), documentExistsMiddleware]
+      middlewares: [
+        this.privateRouteMiddleware,
+        validateObjectIdMiddleware,
+        new ValidateDtoMiddleware(UpdateOfferDto),
+        documentExistsMiddleware
+      ]
     });
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Delete,
       handler: this.delete,
-      middlewares: [validateObjectIdMiddleware, documentExistsMiddleware]
+      middlewares: [
+        this.privateRouteMiddleware,
+        validateObjectIdMiddleware,
+        documentExistsMiddleware
+      ]
     });
   }
 
   public async index(req: Request, res: Response): Promise<void> {
     const count = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
     const offers = await this.offerService.find(count);
-    this.ok(res, plainToInstance(OfferShortRdo, offers, { excludeExtraneousValues: true }));
+    let favoriteIds = new Set<string>();
+
+    if (req.user) {
+      const currentUser = await this.userService.findById(req.user.id);
+      favoriteIds = new Set(currentUser?.favorites.map((offerId) => offerId.toString()));
+    }
+
+    offers.forEach((offer) => {
+      offer.isFavorite = favoriteIds.has(offer.id);
+    });
+
+    const offersWithFavorite = offers as unknown as DocumentType<OfferEntity>[];
+
+    this.ok(res, plainToInstance(OfferShortRdo, offersWithFavorite, { excludeExtraneousValues: true }));
   }
 
   public async create(
-    { body }: Request<unknown, unknown, CreateOfferDto>,
+    { body, user }: Request<unknown, unknown, CreateOfferDto>,
     res: Response
   ): Promise<void> {
-    const result = await this.offerService.create({
-      ...body,
-      host: '662fca6a15456f59e9a4f4d2',
-    });
+    if (!user) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
+    }
+
+    const result = await this.offerService.create(body, user.id);
     this.created(res, plainToInstance(OfferRdo, result, { excludeExtraneousValues: true }));
   }
 
 
-  public async show({ params }: Request, res: Response): Promise<void> {
-    const { offerId } = params as ParamOfferId;
+  public async show(req: Request, res: Response): Promise<void> {
+    const { offerId } = req.params as ParamOfferId;
     const offer = await this.offerService.findById(offerId);
+
+    if (offer) {
+      if (req.user) {
+        const currentUser = await this.userService.findById(req.user.id);
+        const favoriteIds = new Set(currentUser?.favorites.map((id) => id.toString()));
+        offer.isFavorite = favoriteIds.has(offer.id);
+      } else {
+        offer.isFavorite = false;
+      }
+    }
+
     this.ok(res, plainToInstance(OfferRdo, offer, { excludeExtraneousValues: true }));
   }
 
   public async update(
-    { body, params }: Request<unknown, unknown, UpdateOfferDto>,
+    { body, params, user }: Request<unknown, unknown, UpdateOfferDto>,
     res: Response
   ): Promise<void> {
     const { offerId } = params as ParamOfferId;
+    const offer = await this.offerService.findById(offerId);
+
+    if (!user) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
+    }
+
+    if ((offer?.host as unknown as UserEntity)._id.toString() !== user.id) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You are not the author of this offer.',
+        'OfferController'
+      );
+    }
+
     const updatedOffer = await this.offerService.updateById(offerId, body);
     this.ok(res, plainToInstance(OfferRdo, updatedOffer, { excludeExtraneousValues: true }));
   }
 
-  public async delete({ params }: Request, res: Response): Promise<void> {
+  public async delete({ params, user }: Request, res: Response): Promise<void> {
     const { offerId } = params as ParamOfferId;
+    const offer = await this.offerService.findById(offerId);
+
+    if (!user) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
+    }
+
+    if ((offer?.host as unknown as UserEntity)._id.toString() !== user.id) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You are not the author of this offer.',
+        'OfferController'
+      );
+    }
+
     await this.offerService.deleteById(offerId);
     this.noContent(res);
   }
@@ -107,6 +177,19 @@ export class OfferController extends BaseController {
       );
     }
     const offers = await this.offerService.findPremiumByCity(city);
-    this.ok(res, plainToInstance(OfferShortRdo, offers, { excludeExtraneousValues: true }));
+    let favoriteIds = new Set<string>();
+
+    if (req.user) {
+      const currentUser = await this.userService.findById(req.user.id);
+      favoriteIds = new Set(currentUser?.favorites.map((offerId) => offerId.toString()));
+    }
+
+    offers.forEach((offer) => {
+      offer.isFavorite = favoriteIds.has(offer.id);
+    });
+
+    const offersWithFavorite = offers as unknown as DocumentType<OfferEntity>[];
+
+    this.ok(res, plainToInstance(OfferShortRdo, offersWithFavorite, { excludeExtraneousValues: true }));
   }
 }

@@ -9,6 +9,7 @@ import { ICommandHandler } from '../cli/command-handler.interface.js';
 import { IDatabaseClient } from '../shared/libs/database-client/index.js';
 import { getMongoURI } from '../shared/libs/utils.js';
 import { resolve } from 'node:path';
+import { IMiddleware } from '../shared/libs/rest/middleware/index.js';
 
 @injectable()
 export class Application {
@@ -24,6 +25,7 @@ export class Application {
     @inject(Component.OfferController) private readonly offerController: IController,
     @inject(Component.CommentController) private readonly commentController: IController,
     @inject(Component.FavoriteController) private readonly favoriteController: IController,
+    @inject(Component.AuthenticateMiddleware) private readonly authenticateMiddleware: IMiddleware,
     @inject(Component.HelpCommand) helpCommand: ICommandHandler,
     @inject(Component.VersionCommand) versionCommand: ICommandHandler,
     @inject(Component.ImportCommand) importCommand: ICommandHandler,
@@ -58,6 +60,7 @@ export class Application {
       '/static',
       express.static(resolve(process.cwd(), uploadDirectory))
     );
+    this.server.use(this.authenticateMiddleware.execute.bind(this.authenticateMiddleware));
     this.logger.info('Global middleware initialized.');
   }
 

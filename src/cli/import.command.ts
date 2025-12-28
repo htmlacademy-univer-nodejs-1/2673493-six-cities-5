@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { ILogger } from '../shared/libs/logger/index.js';
 import { injectable, inject } from 'inversify';
 import { Component } from '../shared/types/index.js';
-import { IOfferService } from '../shared/modules/offer/index.js';
+import { CreateOfferDto, IOfferService } from '../shared/modules/offer/index.js';
 import { IUserService } from '../shared/modules/user/index.js';
 import { IConfig, RestSchema } from '../shared/libs/config/index.js';
 import { IDatabaseClient } from '../shared/libs/database-client/index.js';
@@ -39,8 +39,7 @@ export class ImportCommand implements ICommandHandler {
 
     await this.offerService.create({
       ...offerData,
-      host: user.id,
-    });
+    } as CreateOfferDto, user.id);
   }
 
   private getOffer(lineData: string[]): Offer {

@@ -10,9 +10,11 @@ import { HttpMethod } from '../../libs/rest/types/http-method.enum.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { LoginUserDto } from './dto/login-user.dto.js';
 import { UserRdo } from './rdo/user.rdo.js';
+import { LoggedUserRdo } from './rdo/logged-user.rdo.js';
 import { plainToInstance } from 'class-transformer';
 import { HttpError } from '../../libs/rest/errors/http-error.js';
 import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, UploadFileMiddleware, DocumentExistsMiddleware } from '../../libs/rest/middleware/index.js';
+import { ITokenService, TokenPayload } from '../../libs/token-service/index.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -20,6 +22,7 @@ export class UserController extends BaseController {
     @inject(Component.Logger) protected readonly logger: ILogger,
     @inject(Component.UserService) private readonly userService: IUserService,
     @inject(Component.Config) private readonly config: IConfig<RestSchema>,
+    @inject(Component.TokenService) private readonly tokenService: ITokenService,
   ) {
     super(logger);
     this.logger.info('Register routes for UserController...');
@@ -86,20 +89,26 @@ export class UserController extends BaseController {
       );
     }
 
-    this.ok(res, { token: 'secret-token' });
+    const tokenPayload: TokenPayload = {
+      email: user.email,
+      id: user.id
+    };
+
+    const token = await this.tokenService.sign(tokenPayload);
+    const responseData = plainToInstance(LoggedUserRdo, { token }, { excludeExtraneousValues: true });
+    this.ok(res, responseData);
   }
 
-  public async checkStatus(_req: Request, res: Response): Promise<void> {
-    const hardcodedUserId = '662fca6a15456f59e9a4f4d2';
-    const user = await this.userService.findById(hardcodedUserId);
-
-    if (!user) {
+  public async checkStatus(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         'Unauthorized',
         'UserController'
       );
     }
+
+    const user = await this.userService.findByEmail(req.user.email);
 
     this.ok(res, plainToInstance(UserRdo, user, { excludeExtraneousValues: true }));
   }

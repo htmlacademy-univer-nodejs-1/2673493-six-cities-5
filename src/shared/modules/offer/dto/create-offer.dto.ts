@@ -61,8 +61,6 @@ export class CreateOfferDto {
   @IsEnum(Amenity, { each: true, message: 'Invalid amenity' })
   public amenities!: Amenity[];
 
-  public host!: string;
-
   @ValidateNested()
   @Type(() => CoordinatesDto)
   public coordinates!: CoordinatesDto;

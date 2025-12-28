@@ -18,6 +18,10 @@ import { VersionCommand } from './cli/version.command.js';
 import { ImportCommand } from './cli/import.command.js';
 import { GenerateCommand } from './cli/generate.command.js';
 import { execSync } from 'node:child_process';
+import { ITokenService, JWTTokenService } from './shared/libs/token-service/index.js';
+import { IMiddleware } from './shared/libs/rest/middleware/index.js';
+import { AuthenticateMiddleware } from './shared/libs/rest/middleware/index.js';
+import { PrivateRouteMiddleware } from './shared/libs/rest/middleware/index.js';
 
 async function bootstrap() {
   if (process.platform === 'win32') {
@@ -48,6 +52,9 @@ async function bootstrap() {
   container.bind<IController>(Component.OfferController).to(OfferController).inSingletonScope();
   container.bind<IController>(Component.FavoriteController).to(FavoriteController).inSingletonScope();
   container.bind<IController>(Component.CommentController).to(CommentController).inSingletonScope();
+  container.bind<ITokenService>(Component.TokenService).to(JWTTokenService).inSingletonScope();
+  container.bind<IMiddleware>(Component.AuthenticateMiddleware).to(AuthenticateMiddleware).inSingletonScope();
+  container.bind<IMiddleware>(Component.PrivateRouteMiddleware).to(PrivateRouteMiddleware).inSingletonScope();
 
   const application = container.get<Application>(Component.Application);
   await application.init();
