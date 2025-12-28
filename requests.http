@@ -1,0 +1,14 @@
+### Upload avatar for a user
+#
+# Create a file named 'test-avatar.png' in the root of the project to test this.
+# Replace '662fca6a15456f59e9a4f4d2' with an actual user ID from your database.
+#
+POST http://localhost:4000/users/662fca6a15456f59e9a4f4d2/avatar
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="avatar"; filename="test-avatar.png"
+Content-Type: image/png
+
+< ./test-avatar.png
+--boundary--

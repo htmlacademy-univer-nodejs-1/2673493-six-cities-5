@@ -84,4 +84,9 @@ export class DefaultOfferService implements IOfferService {
       .findByIdAndUpdate(offerId, { rating }, { new: true })
       .exec() as unknown as Promise<DocumentType<OfferEntity> | null>;
   }
+
+  public async exists(offerId: string): Promise<boolean> {
+    const result = await this.offerModel.exists({ _id: offerId });
+    return result !== null;
+  }
 }
