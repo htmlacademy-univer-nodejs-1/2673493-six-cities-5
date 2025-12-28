@@ -7,7 +7,7 @@ import { Component } from './shared/types/index.js';
 import { IDatabaseClient, MongoDatabaseClient } from './shared/libs/database-client/index.js';
 import { DefaultUserService, UserEntity, UserModel, IUserService, UserController } from './shared/modules/user/index.js';
 import { DefaultOfferService, OfferEntity, OfferModel, IOfferService, OfferController } from './shared/modules/offer/index.js';
-import { ICommentService, DefaultCommentService, CommentEntity, CommentModel } from './shared/modules/comment/index.js';
+import { ICommentService, DefaultCommentService, CommentEntity, CommentModel, CommentController } from './shared/modules/comment/index.js';
 import { types } from '@typegoose/typegoose';
 import { IExceptionFilter, AppExceptionFilter } from './shared/libs/rest/exception-filter/index.js';
 import { IController } from './shared/libs/rest/controller/index.js';
@@ -47,6 +47,7 @@ async function bootstrap() {
   container.bind<IController>(Component.UserController).to(UserController).inSingletonScope();
   container.bind<IController>(Component.OfferController).to(OfferController).inSingletonScope();
   container.bind<IController>(Component.FavoriteController).to(FavoriteController).inSingletonScope();
+  container.bind<IController>(Component.CommentController).to(CommentController).inSingletonScope();
 
   const application = container.get<Application>(Component.Application);
   await application.init();

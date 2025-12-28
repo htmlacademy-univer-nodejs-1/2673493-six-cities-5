@@ -21,6 +21,7 @@ export class Application {
     @inject(Component.DatabaseClient) private readonly databaseClient: IDatabaseClient,
     @inject(Component.UserController) private readonly userController: IController,
     @inject(Component.OfferController) private readonly offerController: IController,
+    @inject(Component.CommentController) private readonly commentController: IController,
     @inject(Component.FavoriteController) private readonly favoriteController: IController,
     @inject(Component.HelpCommand) helpCommand: ICommandHandler,
     @inject(Component.VersionCommand) versionCommand: ICommandHandler,
@@ -57,6 +58,7 @@ export class Application {
   private async _initRoutes() {
     this.server.use('/users', this.userController.router);
     this.server.use('/offers', this.offerController.router);
+    this.server.use('/offers', this.commentController.router);
     this.server.use('/favorites', this.favoriteController.router);
     this.logger.info('Routes initialized.');
   }

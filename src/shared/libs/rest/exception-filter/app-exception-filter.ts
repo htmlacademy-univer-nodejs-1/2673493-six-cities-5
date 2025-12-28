@@ -15,7 +15,7 @@ export class AppExceptionFilter implements IExceptionFilter {
   }
 
   private handleHttpError(error: HttpError, _req: Request, res: Response, _next: NextFunction) {
-    this.logger.error(`[${error.details}] ${error.httpStatusCode} — ${error.message}`, error);
+    this.logger.error(`[${error.message}] ${error.httpStatusCode}`, error);
     res
       .status(error.httpStatusCode)
       .json({error: error.message, details: error.details});

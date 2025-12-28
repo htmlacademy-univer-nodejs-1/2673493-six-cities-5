@@ -1,3 +1,4 @@
+import { ValidateDtoMiddleware, ValidateObjectIdMiddleware } from '../../libs/rest/middleware/index.js';
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { BaseController } from '../../libs/rest/controller/base-controller.abstract.js';
@@ -26,13 +27,34 @@ export class OfferController extends BaseController {
     super(logger);
 
     this.logger.info('Register routes for OfferController...');
+    const validateObjectIdMiddleware = new ValidateObjectIdMiddleware('offerId');
 
     this.addRoute({ path: '/', method: HttpMethod.Get, handler: this.index });
-    this.addRoute({ path: '/', method: HttpMethod.Post, handler: this.create });
+    this.addRoute({
+      path: '/',
+      method: HttpMethod.Post,
+      handler: this.create,
+      middlewares: [new ValidateDtoMiddleware(CreateOfferDto)]
+    });
     this.addRoute({ path: '/premium', method: HttpMethod.Get, handler: this.getPremium });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Get, handler: this.show });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Patch, handler: this.update });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Delete, handler: this.delete });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Get,
+      handler: this.show,
+      middlewares: [validateObjectIdMiddleware]
+    });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Patch,
+      handler: this.update,
+      middlewares: [validateObjectIdMiddleware, new ValidateDtoMiddleware(UpdateOfferDto)]
+    });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Delete,
+      handler: this.delete,
+      middlewares: [validateObjectIdMiddleware]
+    });
   }
 
   public async index(req: Request, res: Response): Promise<void> {

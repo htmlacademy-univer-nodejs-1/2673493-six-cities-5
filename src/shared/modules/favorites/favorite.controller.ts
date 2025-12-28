@@ -1,3 +1,4 @@
+import { ValidateObjectIdMiddleware } from '../../libs/rest/middleware/index.js';
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import { BaseController } from '../../libs/rest/controller/base-controller.abstract.js';
@@ -22,9 +23,21 @@ export class FavoriteController extends BaseController {
     super(logger);
 
     this.logger.info('Register routes for FavoriteController...');
+    const validateObjectIdMiddleware = new ValidateObjectIdMiddleware('offerId');
+
     this.addRoute({ path: '/', method: HttpMethod.Get, handler: this.index });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Post, handler: this.addFavorite });
-    this.addRoute({ path: '/:offerId', method: HttpMethod.Delete, handler: this.removeFavorite });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Post,
+      handler: this.addFavorite,
+      middlewares: [validateObjectIdMiddleware]
+    });
+    this.addRoute({
+      path: '/:offerId',
+      method: HttpMethod.Delete,
+      handler: this.removeFavorite,
+      middlewares: [validateObjectIdMiddleware]
+    });
   }
 
   public async index(_req: Request, res: Response): Promise<void> {
