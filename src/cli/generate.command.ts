@@ -25,7 +25,7 @@ export class GenerateCommand implements ICommandHandler {
 
   constructor(@inject(Component.Logger) private readonly logger: ILogger) {}
 
-  private getRandomBoolean(): boolean {
+  private static getRandomBoolean(): boolean {
     return Math.random() > 0.5;
   }
 
@@ -44,8 +44,8 @@ export class GenerateCommand implements ICommandHandler {
     const city = getRandomItem(Object.keys(CITIES_COORDINATES));
     const previewSrc = getRandomItem(baseOffer.images);
     const images = baseOffer.images.join(',');
-    const isPremium = this.getRandomBoolean();
-    const isFavorite = this.getRandomBoolean();
+    const isPremium = GenerateCommand.getRandomBoolean();
+    const isFavorite = GenerateCommand.getRandomBoolean();
     const rating = getRandomNumber(1, 5, 1);
     const type = getRandomItem(this.types);
     const bedroomsCount = getRandomNumber(1, 8);

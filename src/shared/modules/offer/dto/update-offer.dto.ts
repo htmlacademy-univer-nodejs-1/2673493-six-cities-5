@@ -4,14 +4,15 @@ import {
   IsEnum,
   IsInt,
   IsOptional,
-  IsUrl,
   Length,
   Max,
   Min,
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
-  ArrayNotEmpty
+  ArrayNotEmpty,
+  IsString,
+  Matches
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Amenity, City, HousingType } from '../../../types/index.js';
@@ -31,14 +32,16 @@ export class UpdateOfferDto {
   public city?: City;
 
   @IsOptional()
-  @IsUrl({}, { message: 'previewSrc must be a valid URL' })
+  @IsString({ message: 'previewSrc must be a string' })
+  @Matches(/\.(jpg|png)$/i, { message: 'previewSrc must be a valid image path (.jpg, .png)' })
   public previewSrc?: string;
 
   @IsOptional()
   @IsArray({ message: 'Images must be an array' })
   @ArrayMinSize(6, { message: 'There must be exactly 6 images' })
   @ArrayMaxSize(6, { message: 'There must be exactly 6 images' })
-  @IsUrl({}, { each: true, message: 'Each image must be a valid URL' })
+  @IsString({ each: true, message: 'Each image must be a string' })
+  @Matches(/\.(jpg|png)$/i, { each: true, message: 'Each image must be a valid image path (.jpg, .png)' })
   public images?: string[];
 
   @IsOptional()

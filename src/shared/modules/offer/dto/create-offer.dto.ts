@@ -3,18 +3,22 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
-  IsUrl,
   Length,
   Max,
   Min,
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
-  ArrayNotEmpty
+  ArrayNotEmpty,
+  IsOptional,
+  IsDateString,
+  IsNumber,
+  IsString,
+  Matches
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { Amenity, City, HousingType } from '../../../types/index.js';
 import { CoordinatesDto } from './coordinates.dto.js';
+import { Type } from 'class-transformer';
 
 export class CreateOfferDto {
   @Length(10, 100, { message: 'Name length must be between 10 and 100 characters' })
@@ -26,13 +30,15 @@ export class CreateOfferDto {
   @IsEnum(City, { message: 'Invalid city' })
   public city!: City;
 
-  @IsUrl({}, { message: 'previewSrc must be a valid URL' })
+  @IsString({ message: 'previewSrc must be a string' })
+  @Matches(/\.(jpg|png)$/i, { message: 'previewSrc must be a valid image path (.jpg, .png)' })
   public previewSrc!: string;
 
   @IsArray({ message: 'Images must be an array' })
   @ArrayMinSize(6, { message: 'There must be exactly 6 images' })
   @ArrayMaxSize(6, { message: 'There must be exactly 6 images' })
-  @IsUrl({}, { each: true, message: 'Each image must be a valid URL' })
+  @IsString({ each: true, message: 'Each image must be a string' })
+  @Matches(/\.(jpg|png)$/i, { each: true, message: 'Each image must be a valid image path (.jpg, .png)' })
   public images!: string[];
 
   @IsBoolean({ message: 'isPremium must be a boolean' })
@@ -64,4 +70,18 @@ export class CreateOfferDto {
   @ValidateNested()
   @Type(() => CoordinatesDto)
   public coordinates!: CoordinatesDto;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'publicationDate must be a valid ISO date' })
+  public publicationDate?: Date;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'rating must be a number' })
+  @Min(1)
+  @Max(5)
+  public rating?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'commentsCount must be an integer' })
+  public commentsCount?: number;
 }

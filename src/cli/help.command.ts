@@ -20,7 +20,7 @@ export class HelpCommand implements ICommandHandler {
       ${chalk.yellow('Команды:')}
           ${chalk.green('--version:')}                   # выводит номер версии
           ${chalk.green('--help:')}                      # печатает этот текст
-          ${chalk.green('--import <path> <user> <password> <host> <port> <db_name>:')} # импортирует данные из TSV
+          ${chalk.green('--import <path>:')}             # импортирует данные из TSV
           ${chalk.green('--generate <n> <path> <url>:')} # генерирует n тестовых предложений в файл path из данных по url
     `);
   }

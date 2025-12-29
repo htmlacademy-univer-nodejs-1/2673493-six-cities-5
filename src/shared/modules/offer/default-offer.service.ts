@@ -21,8 +21,9 @@ export class DefaultOfferService implements IOfferService {
     const result = await this.offerModel.create({
       ...dto,
       host: userId,
-      publicationDate: new Date(),
-      rating: 1,
+      publicationDate: dto.publicationDate ?? new Date(),
+      rating: dto.rating ?? 1,
+      commentsCount: dto.commentsCount ?? 0,
     });
     this.logger.info(`New offer created: ${dto.name}`);
 

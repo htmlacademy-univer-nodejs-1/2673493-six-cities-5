@@ -49,12 +49,13 @@ export class FavoriteController extends BaseController {
       throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
     }
     const favorites = await this.userService.getFavorites(user.id);
-    favorites.forEach((offer) => {
+    const validFavorites = (favorites as unknown as unknown[]).filter((offer) => offer !== null) as unknown as DocumentType<OfferEntity>[];
+
+    validFavorites.forEach((offer) => {
       offer.isFavorite = true;
     });
-    const favoritesWithFlag = favorites as unknown as DocumentType<OfferEntity>[];
 
-    this.ok(res, plainToInstance(OfferShortRdo, favoritesWithFlag, { excludeExtraneousValues: true }));
+    this.ok(res, plainToInstance(OfferShortRdo, validFavorites, { excludeExtraneousValues: true }));
   }
 
   public async addFavorite({ params, user }: Request, res: Response): Promise<void> {
