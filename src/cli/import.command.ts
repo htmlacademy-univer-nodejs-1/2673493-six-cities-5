@@ -21,10 +21,10 @@ export class ImportCommand implements ICommandHandler {
     @inject(Component.Logger) private readonly logger: ILogger,
     @inject(Component.OfferService) private readonly offerService: IOfferService,
     @inject(Component.UserService) private readonly userService: IUserService,
-    @inject(Component.Config) configService: IConfig<RestSchema>,
+    @inject(Component.Config) private readonly configService: IConfig<RestSchema>,
     @inject(Component.DatabaseClient) private readonly databaseClient: IDatabaseClient,
   ) {
-    this.salt = configService.get('SALT');
+    this.salt = this.configService.get('SALT');
   }
 
   private onComplete(count: number) {
@@ -37,9 +37,15 @@ export class ImportCommand implements ICommandHandler {
       ...offerData.host,
     }, this.salt);
 
-    await this.offerService.create({
-      ...offerData,
+    const { isFavorite, ...restOffer } = offerData;
+
+    const createdOffer = await this.offerService.create({
+      ...restOffer,
     } as CreateOfferDto, user.id);
+
+    if (isFavorite) {
+      await this.userService.addToFavorites(user.id, createdOffer.id);
+    }
   }
 
   private getOffer(lineData: string[]): Offer {
@@ -98,14 +104,20 @@ export class ImportCommand implements ICommandHandler {
   }
 
   public async execute(...params: string[]): Promise<void> {
-    const [filepath, user, password, host, port, dbname] = params;
+    const [filepath] = params;
 
-    if (!filepath || !user || !password || !host || !port || !dbname) {
-      this.logger.warn('Incorrect parameters. Usage: --import <filepath> <user> <password> <host> <port> <dbname>');
+    if (!filepath) {
+      this.logger.warn('Incorrect parameters. Usage: --import <filepath>');
       return;
     }
 
-    const mongoUri = getMongoURI(user, password, host, Number.parseInt(port, 10), dbname);
+    const mongoUri = getMongoURI(
+      this.configService.get('DB_USER'),
+      this.configService.get('DB_PASSWORD'),
+      this.configService.get('DB_HOST'),
+      this.configService.get('DB_PORT'),
+      this.configService.get('DB_NAME'),
+    );
 
     try {
       await this.databaseClient.connect(mongoUri);

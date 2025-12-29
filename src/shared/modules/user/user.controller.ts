@@ -13,7 +13,13 @@ import { UserRdo } from './rdo/user.rdo.js';
 import { LoggedUserRdo } from './rdo/logged-user.rdo.js';
 import { plainToInstance } from 'class-transformer';
 import { HttpError } from '../../libs/rest/errors/http-error.js';
-import { ValidateDtoMiddleware, ValidateObjectIdMiddleware, UploadFileMiddleware, DocumentExistsMiddleware } from '../../libs/rest/middleware/index.js';
+import {
+  ValidateDtoMiddleware,
+  ValidateObjectIdMiddleware,
+  UploadFileMiddleware,
+  DocumentExistsMiddleware,
+  IMiddleware
+} from '../../libs/rest/middleware/index.js';
 import { ITokenService, TokenPayload } from '../../libs/token-service/index.js';
 
 @injectable()
@@ -23,6 +29,7 @@ export class UserController extends BaseController {
     @inject(Component.UserService) private readonly userService: IUserService,
     @inject(Component.Config) private readonly config: IConfig<RestSchema>,
     @inject(Component.TokenService) private readonly tokenService: ITokenService,
+    @inject(Component.PrivateRouteMiddleware) private readonly privateRouteMiddleware: IMiddleware,
   ) {
     super(logger);
     this.logger.info('Register routes for UserController...');
@@ -41,7 +48,12 @@ export class UserController extends BaseController {
       middlewares: [new ValidateDtoMiddleware(LoginUserDto)]
     });
 
-    this.addRoute({ path: '/me', method: HttpMethod.Get, handler: this.checkStatus });
+    this.addRoute({
+      path: '/me',
+      method: HttpMethod.Get,
+      handler: this.checkStatus,
+      middlewares: [this.privateRouteMiddleware]
+    });
 
     const documentExistsMiddleware = new DocumentExistsMiddleware(this.userService, 'User', 'userId');
     this.addRoute({
@@ -49,6 +61,7 @@ export class UserController extends BaseController {
       method: HttpMethod.Post,
       handler: this.uploadAvatar,
       middlewares: [
+        this.privateRouteMiddleware,
         new ValidateObjectIdMiddleware('userId'),
         documentExistsMiddleware,
         new UploadFileMiddleware(this.config, 'avatar'),
@@ -57,9 +70,17 @@ export class UserController extends BaseController {
   }
 
   public async create(
-    { body }: Request<unknown, unknown, CreateUserDto>,
+    { body, user }: Request<unknown, unknown, CreateUserDto>,
     res: Response,
   ): Promise<void> {
+    if (user) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'Only anonymous clients can create new users',
+        'UserController'
+      );
+    }
+
     const existedUser = await this.userService.findByEmail(body.email);
 
     if (existedUser) {
@@ -99,8 +120,8 @@ export class UserController extends BaseController {
     this.ok(res, responseData);
   }
 
-  public async checkStatus(req: Request, res: Response): Promise<void> {
-    if (!req.user) {
+  public async checkStatus({ user }: Request, res: Response): Promise<void> {
+    if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         'Unauthorized',
@@ -108,13 +129,22 @@ export class UserController extends BaseController {
       );
     }
 
-    const user = await this.userService.findByEmail(req.user.email);
+    const foundUser = await this.userService.findByEmail(user.email);
 
-    this.ok(res, plainToInstance(UserRdo, user, { excludeExtraneousValues: true }));
+    this.ok(res, plainToInstance(UserRdo, foundUser, { excludeExtraneousValues: true }));
   }
 
   public async uploadAvatar(req: Request, res: Response): Promise<void> {
     const { userId } = req.params;
+    const { user } = req;
+
+    if (!user) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'UserController');
+    }
+
+    if (user.id !== userId) {
+      throw new HttpError(StatusCodes.FORBIDDEN, 'You can only upload your own avatar', 'UserController');
+    }
 
     if (!req.file) {
       throw new HttpError(StatusCodes.BAD_REQUEST, 'No file uploaded');

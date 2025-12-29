@@ -10,6 +10,7 @@ import { IDatabaseClient } from '../shared/libs/database-client/index.js';
 import { getMongoURI } from '../shared/libs/utils.js';
 import { resolve } from 'node:path';
 import { IMiddleware } from '../shared/libs/rest/middleware/index.js';
+import cors from 'cors';
 
 @injectable()
 export class Application {
@@ -54,12 +55,13 @@ export class Application {
   }
 
   private async _initMiddleware() {
-    this.server.use(express.json());
     const uploadDirectory = this.config.get('UPLOAD_DIRECTORY');
     this.server.use(
       '/static',
       express.static(resolve(process.cwd(), uploadDirectory))
     );
+    this.server.use(cors());
+    this.server.use(express.json());
     this.server.use(this.authenticateMiddleware.execute.bind(this.authenticateMiddleware));
     this.logger.info('Global middleware initialized.');
   }

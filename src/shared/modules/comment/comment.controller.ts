@@ -65,7 +65,7 @@ export class CommentController extends BaseController {
     const { offerId } = req.params as ParamOfferId;
 
     if (!user) {
-      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'FavoriteController');
+      throw new HttpError(StatusCodes.UNAUTHORIZED, 'Unauthorized', 'CommentController');
     }
 
     const result = await this.commentService.create({ ...body, offerId }, user.id);
